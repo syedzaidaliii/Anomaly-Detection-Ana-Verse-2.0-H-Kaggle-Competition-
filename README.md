@@ -183,3 +183,58 @@ Both models are calibrated to output probabilities, but the default 0.5 cutoff i
 
 **Why not use `early_stopping_rounds`?**
 A fixed number of estimators was used intentionally so that the validation set is kept clean for threshold optimisation — mixing early stopping with threshold tuning on the same fold can introduce subtle bias.
+
+## Insights & Analysis
+Problem Understanding
+
+The task in this project was to identify unusual patterns in sensor-based time-series data. One thing that became clear very early is that anomalies are rare compared to normal observations. Because of this imbalance, relying on accuracy would give a misleading sense of performance. A model can achieve high accuracy while still missing most anomalies, so the evaluation had to focus more on recall, precision, and their balance through the F1-score.
+
+**What the Data Revealed**
+
+While exploring the data, a few patterns stood out:
+
+ - Anomalies were not consistent in shape or magnitude. In many cases, they appeared as sudden spikes or drops rather than gradual changes.
+ - Some features showed visible differences between normal and anomalous points, but none of them worked well in isolation.
+ - The relationship between multiple features often carried more information than any single variable on its own.
+
+This suggested that simple threshold-based detection would not be sufficient, and the model needed richer context.
+
+**Feature Engineering Decisions**
+
+Most of the improvement in results came from how the data was transformed rather than the choice of model.
+
+ - Time-related features were extracted to capture patterns that repeat over days or weeks.
+ - Lag values were introduced to give the model a sense of what happened in previous time steps.
+ - Rolling statistics helped smooth short-term noise while still retaining underlying trends.
+ - Differences between consecutive values made it easier to detect sudden changes.
+ - Exponential averages were useful in giving more importance to recent behavior.
+
+These additions made the data more expressive and allowed the model to pick up patterns that were not obvious in the raw form.
+
+**Modeling Approach**
+
+Tree-based models were used since they handle structured data well and require less preprocessing compared to other approaches.
+
+ - LightGBM and XGBoost were trained separately.
+ - Class imbalance was handled by assigning higher importance to the minority class.
+ - Instead of relying on a single model, predictions were combined to reduce variability and improve consistency.
+
+Another important step was adjusting the decision threshold. The default value did not give the best balance between missing anomalies and raising false alarms.
+
+**Key Takeaways**
+ - Better features contributed more to performance than switching between different models.
+ - Looking at the problem from a time perspective was essential; ignoring temporal context reduced performance.
+ - Combining models gave more stable predictions compared to relying on just one.
+ - Small adjustments, such as threshold tuning, had a noticeable impact on results.
+**Challenges Faced**
+ - The imbalance in the dataset made it difficult to train a model that performs well on both classes.
+ - Capturing both short-term spikes and longer trends required multiple types of features.
+ - Reducing false positives without missing real anomalies involved careful tuning.
+**Possible Next Steps**
+ - Try sequence-based models like LSTM to directly capture temporal dependencies.
+ - Explore unsupervised approaches that do not rely heavily on labeled anomalies.
+ - Reduce the number of features by removing redundant ones.
+ - Use more robust validation strategies to ensure consistent performance.
+**Closing Remark**
+
+The main takeaway from this work is that anomaly detection is less about using complex algorithms and more about understanding how the data behaves over time and representing it in a meaningful way.
